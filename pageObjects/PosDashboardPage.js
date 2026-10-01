@@ -37,7 +37,7 @@ class PosDashboardPage extends BasePage{
 
     /** Override (polymorphism): the POS sale screen is ready. Opened via RetailPage.openPosInterface(). */
     async verifyPageLoaded(){
-        await expect(this.page).toHaveTitle('iVendNext Point of Sale');
+        await expect(this.page).toHaveTitle(/Point of Sale$/);
         await expect(this.transactionMode).toBeVisible();
     }
 

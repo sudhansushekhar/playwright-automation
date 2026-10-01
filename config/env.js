@@ -34,6 +34,9 @@ const ENV = {
     get username() { return required('APP_USERNAME') },
     get email() { return required('APP_EMAIL') },
     get password() { return required('APP_PASSWORD') },
+
+    /** Server-side module that hosts the POS API, e.g. api/method/<module>.api.point_of_sale... */
+    get posApiModule() { return required('POS_API_MODULE') },
 }
 
 module.exports = { ENV }

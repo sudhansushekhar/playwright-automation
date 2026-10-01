@@ -1,6 +1,6 @@
-# Playwright Automation Framework – iVendNext POS
+# Playwright Automation Framework – Retail POS
 
-End-to-end test automation for the **iVendNext** retail / Point of Sale application, built with [Playwright Test](https://playwright.dev/) (JavaScript, CommonJS).
+End-to-end test automation for a **retail / Point of Sale** web application (Frappe-based), built with [Playwright Test](https://playwright.dev/) (JavaScript, CommonJS).
 
 What the framework combines:
 
@@ -109,7 +109,7 @@ PlayWright Framework/
 ├── .env.example                    # template for your local .env (.env is git-ignored)
 ├── playwright.config.js            # projects, timeouts, storageState, reporters
 ├── reporting-labs.config.ts        # report title, metadata, masking, history
-├── reporting-labs.history.json     # run history (trend / flaky detection)
+├── reporting-labs.history.json     # run history for trends (generated, git-ignored; CI keeps its own in cache)
 └── package.json                    # npm scripts and dependencies
 ```
 
@@ -136,7 +136,7 @@ PlayWright Framework/
 ### Prerequisites
 
 - Node.js LTS (18+)
-- A running iVendNext instance (default **`http://localhost:8080/`**)
+- A running instance of the application (default **`http://localhost:8080/`**)
 - A test user with POS access and at least one POS terminal from `testData/posData.json → terminals` (default **`CI-CD Terminal`**)
 
 ### Install
@@ -282,6 +282,7 @@ The API does the work, the browser checks it. Uses the fixtures `page`, `pm`, `a
 | `APP_USERNAME` | UI login | **required** |
 | `APP_EMAIL` | API login, opening entry user | **required** |
 | `APP_PASSWORD` | Password | **required** |
+| `POS_API_MODULE` | Server module of the POS API (`api/method/<module>.api…`) | **required** for API tests |
 
 Credentials are getters: a missing value fails only the test that needs it, with a clear message, and never breaks test discovery.
 
@@ -724,7 +725,7 @@ reporter: [
 reporting-labs (`reporting-labs.config.ts`):
 
 - **Output**: `reporting-labs/index.html` + `report.json`
-- **Title / project**: `iVendNext POS – regression`
+- **Title / project**: `Retail POS – regression`
 - **Metadata**: `env` from `TEST_ENV`, `branch` from `GITHUB_REF_NAME`, CI run number in the trend
 - **Masking**: `APP_PASSWORD` is hidden everywhere (passwords, tokens and cookies are masked by default)
 - **API capture**: every `request.*` call is recorded in the report
@@ -754,6 +755,7 @@ Pipeline: `.github/workflows/playwright.yml`
 |------|------|-------|
 | Secret | `BASE_URL` | Test environment the runner can reach |
 | Secret | `APP_USERNAME` / `APP_EMAIL` / `APP_PASSWORD` | Test user |
+| Variable | `POS_API_MODULE` | Server module of the POS API |
 | Variable (optional) | `TEST_ENV` | Report label (default `ci`) |
 | Variable (optional) | `PUBLISH_REPORT_TO_PAGES` | `true` to publish the report to GitHub Pages |
 

@@ -1,6 +1,6 @@
 ---
 name: create-test-script
-description: Write new Playwright test scripts and test logic for this iVendNext framework the way the existing specs do it - Web E2E with PageManager, Web + API with fixtures, storageState login, per-worker POS terminals, tags, meta(), test.step(), test data in posData.json, APIUtils methods. Use this whenever the user asks to automate a scenario, add a test case or spec, cover a new POS/Desk flow (sale, return, void, gift card, customer, shift), add an API call to APIUtils, or turn manual steps into a test - even if they just describe the steps.
+description: Write new Playwright test scripts and test logic for this retail POS framework the way the existing specs do it - Web E2E with PageManager, Web + API with fixtures, storageState login, per-worker POS terminals, tags, meta(), test.step(), test data in posData.json, APIUtils methods. Use this whenever the user asks to automate a scenario, add a test case or spec, cover a new POS/Desk flow (sale, return, void, gift card, customer, shift), add an API call to APIUtils, or turn manual steps into a test - even if they just describe the steps.
 ---
 
 # Create test scripts and test logic

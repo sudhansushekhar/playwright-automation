@@ -1,7 +1,8 @@
 /**
  * APIUtils
  * --------
- * Wrapper around Playwright's APIRequestContext for the iVendNext (Frappe) backend.
+ * Wrapper around Playwright's APIRequestContext for the app's (Frappe) backend.
+ * POS endpoints live under api/method/<POS_API_MODULE>.api... (module name from .env / CI).
  * Used to prepare data quickly through the API (login, terminal binding, opening shift,
  * POS sale) so the browser only has to check the result.
  *
@@ -10,8 +11,12 @@
  */
 const { expect } = require("@playwright/test");
 const { randomUUID } = require("crypto");
+const { ENV } = require("../config/env");
 
 const headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
+
+/** "api/method/<module>.api.<path>" for a POS endpoint, e.g. posApi('point_of_sale.get_opening_entry'). */
+const posApi = (path) => `api/method/${ENV.posApiModule}.api.${path}`
 
 class APIUtils{
     /**
@@ -98,7 +103,7 @@ class APIUtils{
 
     /** Name of the open shift (POS Opening Entry) for the user/terminal, or null. */
     async getOpeningEntry(){
-        const getOpeningEntryResponse = await this.apiContext.post(this.baseUrl+"api/method/ivendnext_pos.api.point_of_sale.get_opening_entry", {headers : headers, data : this.getOpeningEntryPayload})
+        const getOpeningEntryResponse = await this.apiContext.post(this.baseUrl+posApi('point_of_sale.get_opening_entry'), {headers : headers, data : this.getOpeningEntryPayload})
         await expect(getOpeningEntryResponse).toBeOK();
 
         const getOpeningEntryJson = await getOpeningEntryResponse.json();
@@ -109,7 +114,7 @@ class APIUtils{
 
     /** Open a new shift and return its name. */
     async createOpeningEntry(){
-        const createOpeningEntryResponse = await this.apiContext.post(this.baseUrl+"api/method/ivendnext_pos.api.point_of_sale.create_pos_opening_entry", {headers : headers, data : this.createOpeningEntryPayload})
+        const createOpeningEntryResponse = await this.apiContext.post(this.baseUrl+posApi('point_of_sale.create_pos_opening_entry'), {headers : headers, data : this.createOpeningEntryPayload})
         await expect(createOpeningEntryResponse).toBeOK();
 
         const openingEntry = (await createOpeningEntryResponse.json()).message.name;
@@ -127,7 +132,7 @@ class APIUtils{
     /** Submit a POS invoice. `page` is a logged-in browser page used only to read the CSRF token. */
     async saleItem(page, salePayload){
         const csrfToken = await this.getCsrfTokenAfterLoggedIn(page);
-        const saleResponse = await this.apiContext.post(this.baseUrl+"api/method/ivendnext_pos.api.pos_invoice.submit_pos_invoice", {
+        const saleResponse = await this.apiContext.post(this.baseUrl+posApi('pos_invoice.submit_pos_invoice'), {
             headers: {"x-frappe-csrf-token" : csrfToken},
             data: salePayload
         })

@@ -15,7 +15,8 @@ class RetailPage extends BasePage{
         // ── Locators ──────────────────────────────────────────────
         this.pageHeading = page.locator("h3[title='Retail']");
         this.retailButton = page.locator('a').filter({ hasText: /^Retail$/ });
-        this.posInterfaceLink = page.getByRole('link', { name: 'iVendNext POS' });
+        // The POS launcher is the only Retail link whose name ends in " POS" (others: "POS Invoice", "POS Terminal", …)
+        this.posInterfaceLink = page.locator("div[shortcut_name*='POS']");
     }
 
     // ── Actions ───────────────────────────────────────────────────
@@ -32,7 +33,7 @@ class RetailPage extends BasePage{
     }
 
     /**
-     * Click "iVendNext POS" and return the POS tab that opens.
+     * Click the POS launcher link and return the POS tab that opens.
      * Start waiting for the popup before clicking, so the event is not missed.
      */
     async openPosInterface(){

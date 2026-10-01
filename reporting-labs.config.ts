@@ -11,7 +11,7 @@ import type { ReportingLabsOptions } from 'reporting-labs';
 const config: ReportingLabsOptions = {
 
   // ── Look ─────────────────────────────────────────────────────────────────────
-  title: 'iVendNext POS – regression',                // shown in the header
+  title: 'Retail POS – regression',                   // shown in the header
   // logo: 'logo.png',                               // your logo next to the title: a file next to this config (embedded), or an https URL
   // palette: 'lab',                                  // 'lab' (blue, default) | 'ocean' | 'ember' | 'mono'; viewers can switch
   // accent: '#7C3AED',                               // your brand color instead of the palette accent
@@ -20,7 +20,7 @@ const config: ReportingLabsOptions = {
   // embedFonts: true,                                // bundle IBM Plex (~140 KB) so it looks the same offline
 
   // ── Header details ───────────────────────────────────────────────────────────
-  project: { name: 'iVendNext POS', team: 'QA Automation', description: 'Playwright UI + API regression' },
+  project: { name: 'Retail POS', team: 'QA Automation', description: 'Playwright UI + API regression' },
   metadata: {                                         // chips in the header; `build` also labels the run in the trend
     env: process.env.TEST_ENV ?? 'local',
     // build: process.env.BUILD_NUMBER ?? 'local',     // when missing, the CI run number is used

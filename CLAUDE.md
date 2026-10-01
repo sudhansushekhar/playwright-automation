@@ -4,11 +4,11 @@ Guidance for Claude Code when working in this repository. Full documentation: `R
 
 ## Project
 
-Playwright Test (JavaScript, CommonJS) automation for the **iVendNext** retail / POS app (Frappe-based).
+Playwright Test (JavaScript, CommonJS) automation for a retail / POS web app (Frappe-based).
 Two areas of the app are tested:
 
 - **Desk** (back office): `BASE_URL/app/...` – login, Retail workspace, POS Terminal, Gift Card, POS Invoice
-- **POS** (point of sale): opens in a **new tab** from Retail › "iVendNext POS" (`app/pos-interface`)
+- **POS** (point of sale): opens in a **new tab** from the POS launcher link on the Retail page (`app/pos-interface`)
 
 ## Commands
 
@@ -20,7 +20,7 @@ WORKERS=2 npm run regression    # parallel, one POS terminal per worker
 npx playwright test --list      # check that every spec loads (no app needed)
 ```
 
-- `.env` (copy of `.env.example`) must hold `APP_USERNAME`, `APP_EMAIL`, `APP_PASSWORD`; `BASE_URL` defaults to `http://localhost:8080/`.
+- `.env` (copy of `.env.example`) must hold `APP_USERNAME`, `APP_EMAIL`, `APP_PASSWORD`, `POS_API_MODULE`; `BASE_URL` defaults to `http://localhost:8080/`.
 - After a run, the report is at `reporting-labs/index.html`; failure traces are in `test-results/`.
 
 ## Layout

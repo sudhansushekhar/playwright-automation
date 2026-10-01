@@ -1,6 +1,6 @@
 ---
 name: create-page-object
-description: Create or extend page objects and locators for this iVendNext Playwright framework, following its exact pattern (BasePage inheritance, this.path + verifyPageLoaded() override, grouped locators, dynamic locator methods, WaitUtils, PageManager registration). Use this whenever the user wants to add a locator, add or change a page object, automate a new Desk or POS screen or popup, fix a broken selector, or says things like "create locators for the Customer page", "add the Cash payment button", "this element is not found", "make a page object for X" — even if they don't say "page object".
+description: Create or extend page objects and locators for this retail POS Playwright framework, following its exact pattern (BasePage inheritance, this.path + verifyPageLoaded() override, grouped locators, dynamic locator methods, WaitUtils, PageManager registration). Use this whenever the user wants to add a locator, add or change a page object, automate a new Desk or POS screen or popup, fix a broken selector, or says things like "create locators for the Customer page", "add the Cash payment button", "this element is not found", "make a page object for X" — even if they don't say "page object".
 ---
 
 # Create page objects and locators
@@ -15,7 +15,7 @@ Look at the real DOM before writing selectors — guessing produces brittle loca
 - Otherwise run a short probe script with the saved session (`playwright/.auth/user.json`, created by `npm run regression` or the `setup` project), list candidate selectors with `locator.count()` and `innerText()`.
 - `npx playwright codegen <BASE_URL>` also works for a quick look.
 
-Desk pages are at `BASE_URL/app/<route>`. The POS opens in a new tab from Retail › "iVendNext POS" and has no stable deep links, so POS screens are reached by flow, not by URL.
+Desk pages are at `BASE_URL/app/<route>`. The POS opens in a new tab from the POS launcher link on the Retail page and has no stable deep links, so POS screens are reached by flow, not by URL.
 
 ## 2. Choose the locator (in this order)
 
