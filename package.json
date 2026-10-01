@@ -1,0 +1,22 @@
+{
+  "name": "playwright-framework",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "regression" : "npx playwright test",
+    "giftCardTest" : "npx playwright test tests/UIE2ETestSerialMode.spec.js --project=chrome",
+    "webTests" : "npx playwright test --grep @web",
+    "APITests" : "npx playwright test --grep @API"
+
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^26.6.2",
+    "reporting-labs": "^0.6.8"
+  }
+}
