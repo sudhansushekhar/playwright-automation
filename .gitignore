@@ -6,3 +6,13 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Secrets & sessions
+.env
+auth.json
+
+# Generated reports (published by CI as an artifact instead)
+/reporting-labs/
+
+# Claude Code session worktrees (local only)
+.claude/worktrees/

@@ -1,33 +1,47 @@
-const {LoginPage} = require('../pageObjects/LoginPage')
-const {HomePage} = require('../pageObjects/HomePage')
-const {RetailPage} = require('../pageObjects/RetailPage')
-const {PosTerminalPopup} = require('../pageObjects/PosTerminalPopup')
-const {PosTerminalListPage} = require('../pageObjects/PosTerminalListPage')
-const {OpeningAmountPopup} = require('../pageObjects/OpeningAmountPopup')
-const {PosDashboardPage} = require('../pageObjects/PosDashboardPage')
-const {PosDashboardMenu} = require('../pageObjects/PosDashboardMenu')
-const {GiftCardSearchPage} = require('../pageObjects/GiftCardSearchPage')
-const {PaymentDetailsPage} = require('../pageObjects/PaymentDetailsPage')
-const {GiftCardListPage} = require('../pageObjects/GiftCardListPage')
+/**
+ * PageManager
+ * -----------
+ * Single entry point to all page objects (factory + composition).
+ * Create one per browser tab:
+ *
+ *   const deskPM = new PageManager(deskPage)
+ *   await deskPM.getHomePage().clickSidebarRetailButton()
+ *
+ * Every getter uses the manager's own tab by default and accepts another tab when needed.
+ */
+const {LoginPage} = require('./LoginPage')
+const {HomePage} = require('./HomePage')
+const {RetailPage} = require('./RetailPage')
+const {PosTerminalListPage} = require('./PosTerminalListPage')
+const {PosTerminalPopup} = require('./PosTerminalPopup')
+const {OpeningAmountPopup} = require('./OpeningAmountPopup')
+const {PosDashboardPage} = require('./PosDashboardPage')
+const {PosDashboardMenu} = require('./PosDashboardMenu')
+const {GiftCardSearchPage} = require('./GiftCardSearchPage')
+const {PaymentDetailsPage} = require('./PaymentDetailsPage')
+const {GiftCardListPage} = require('./GiftCardListPage')
+const {PosInvoicePage} = require('./PosInvoicePage')
 
 class PageManager {
-
     constructor(page){
         this.page = page
     }
 
+    // ── Desk (back office) ────────────────────────────────────────
+    getLoginPage(customPage = this.page) { return new LoginPage(customPage); }
+    getHomePage(customPage = this.page) { return new HomePage(customPage); }
+    getRetailPage(customPage = this.page) { return new RetailPage(customPage); }
+    getPosTerminalListPage(customPage = this.page) { return new PosTerminalListPage(customPage); }
+    getGiftCardListPage(customPage = this.page) { return new GiftCardListPage(customPage); }
+    getPosInvoicePage(customPage = this.page) { return new PosInvoicePage(customPage); }
 
-    getLoginPage(customPage){ return new LoginPage(customPage); }
-    getHomePage(customPage) { return new HomePage(customPage); }
-    getPosTerminalListPage(customPage) { return new PosTerminalListPage(customPage); }
-    getRetailPage(customPage) { return new RetailPage(customPage); }
-    getPosTerminalPopup(customPage) { return new PosTerminalPopup(customPage); }
-    getOpeningAmountPopup(customPage) { return new OpeningAmountPopup(customPage); }
-    getPosDashboardPage(customPage) { return new PosDashboardPage(customPage); }
-    getPosDashboardMenu(customPage) { return new PosDashboardMenu(customPage); }
-    getGiftCardSearchPage(customPage) { return new GiftCardSearchPage(customPage); }
-    getPaymentDetailsPage(customPage) { return new PaymentDetailsPage(customPage); }
-    getGiftCardListPage(customPage) { return new GiftCardListPage(customPage); }
+    // ── POS (point of sale tab) ───────────────────────────────────
+    getPosTerminalPopup(customPage = this.page) { return new PosTerminalPopup(customPage); }
+    getOpeningAmountPopup(customPage = this.page) { return new OpeningAmountPopup(customPage); }
+    getPosDashboardPage(customPage = this.page) { return new PosDashboardPage(customPage); }
+    getPosDashboardMenu(customPage = this.page) { return new PosDashboardMenu(customPage); }
+    getGiftCardSearchPage(customPage = this.page) { return new GiftCardSearchPage(customPage); }
+    getPaymentDetailsPage(customPage = this.page) { return new PaymentDetailsPage(customPage); }
 }
 
 module.exports = {PageManager}

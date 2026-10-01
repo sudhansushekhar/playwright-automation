@@ -1,46 +1,49 @@
+/**
+ * PosDashboardPage
+ * ----------------
+ * Main POS transaction screen: transaction mode, item grid, quick payment
+ * and the "complete transaction" confirmation popup.
+ */
 const {expect} = require('@playwright/test')
+const {BasePage} = require('./BasePage')
 
-class PosDashboardPage{
+class PosDashboardPage extends BasePage{
     constructor(page){
-    this.page = page
-    this.transactionMode = page.locator("[data-name*='transaction_mode'] span:nth-child(2)");
+        super(page)
 
-    // Item Panel
+        // ── Locators: header ──────────────────────────────────────
+        this.transactionMode = page.locator("[data-name*='transaction_mode'] span:nth-child(2)");
 
-    // Customer Panel
+        // ── Locators: transaction grid ────────────────────────────
+        this.transactionGridSelectedRow = page.locator("smart-grid-row[aria-selected='true']")
 
-    // Transaction Table
-    this.transactionGridSelectedRow = page.locator("smart-grid-row[aria-selected='true']")
+        // ── Locators: quick payment ───────────────────────────────
+        this.quickCashButton = page.locator("smart-button[class*='quick_cash'] button")
 
-
-
-    // Cart Summary
-
-    // Quick Payment
-    this.paymentInterfaceBlock = page.locator("smart-button[data_parameter_1*='Payment Interface]")
-    this.quickCashButton = page.locator("smart-button[class*='quick_cash'] button")
-    
-    // Confirm POpup
-    this.confirmPopup = page.locator("smart-window [smart-id='headerSection'] ")
-    this.confirmPopupText = this.page.locator("smart-window [id='formWindowContent'] h4")
-    this.confirmPopupYesButton = this.page.locator("ivend-button[id='yes'] button")
-    this.confirmPopupNoButton = this.page.locator("ivend-button[id='no'] button")
-
+        // ── Locators: confirmation popup ──────────────────────────
+        this.confirmPopup = page.locator("smart-window [smart-id='headerSection'] ")
+        this.confirmPopupText = page.locator("smart-window [id='formWindowContent'] h4")
+        this.confirmPopupYesButton = page.locator("ivend-button[id='yes'] button")
+        this.confirmPopupNoButton = page.locator("ivend-button[id='no'] button")
     }
 
-    // Define a dynamic locator me
+    // ── Dynamic locators ──────────────────────────────────────────
+
     transactionGridSelectedItem(itemCode) {
         return this.transactionGridSelectedRow.locator(`[data-field='item_code'][title='${itemCode}']`);
     }
 
-    async verifyPosInterface(){
+    // ── Assertions ────────────────────────────────────────────────
+
+    /** Override (polymorphism): the POS sale screen is ready. Opened via RetailPage.openPosInterface(). */
+    async verifyPageLoaded(){
         await expect(this.page).toHaveTitle('iVendNext Point of Sale');
+        await expect(this.transactionMode).toBeVisible();
     }
 
     async verifyTransactionMode(transactionMode){
         await expect(this.transactionMode).toBeVisible();
-        const transactionModeCaptured = await this.transactionMode.innerText();
-        console.log(`Transaction Mode Captured: ${transactionModeCaptured.trim()}`);
+        console.log(`Transaction mode: ${(await this.transactionMode.innerText()).trim()}`);
         await expect(this.transactionMode).toContainText(transactionMode)
     }
 
@@ -48,23 +51,26 @@ class PosDashboardPage{
         await expect(this.transactionGridSelectedItem(itemCode)).toBeVisible()
     }
 
+    // ── Actions ───────────────────────────────────────────────────
+
+    /** Confirm "Are you sure you want to complete the transaction?" when it is shown. */
     async clickConfirmPopupYesButton(){
-        if(await this.confirmPopup.isVisible()){
-            console.log("Quick Cash Popup Found")
-            
-            const popupText = await this.confirmPopupText.innerText();
-            console.log(`Popup Text : ${popupText}`)
-            if("Are you sure you want to complete the transaction?" == popupText.trim()){
-                await this.confirmPopupYesButton.click()
-            await this.page.waitForLoadState('networkidle')
-            }
-            
-        } else{
-            console.log("Quick Cash Popup Not Found!!")
+        // The popup opens shortly after the payment click - a one-time check could miss it
+        if(!(await this.wait.isVisibleWithin(this.confirmPopup, 5 * 1000))){
+            console.log("Confirmation popup not shown")
+            return
         }
-        
+
+        await this.wait.waitForText(this.confirmPopupText, /\S/)    // text is filled in after the window opens
+        const popupText = (await this.confirmPopupText.innerText()).trim();
+        console.log(`Confirmation popup: ${popupText}`)
+        if(popupText === "Are you sure you want to complete the transaction?"){
+            await this.confirmPopupYesButton.click()
+            await this.page.waitForLoadState('networkidle')
+        }
     }
 
+    /** Pay the full amount in cash and confirm. */
     async quickPayment(){
         await this.quickCashButton.click()
         await this.clickConfirmPopupYesButton()

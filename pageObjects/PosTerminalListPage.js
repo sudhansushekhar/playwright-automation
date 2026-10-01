@@ -1,27 +1,32 @@
+/**
+ * PosTerminalListPage
+ * -------------------
+ * Desk › POS Terminal list and form.
+ * Main job: release the shared test terminal so the POS "Select POS Terminal"
+ * dropdown offers it again (a terminal bound to another browser is hidden).
+ */
 const {expect} = require('@playwright/test')
-const {LoginPage} = require('../pageObjects/LoginPage')
+const {BasePage} = require('./BasePage')
 
-class PosTerminalListPage{
+class PosTerminalListPage extends BasePage{
     constructor(page){
-    this.page = page
+        super(page)
+        this.path = 'app/pos-terminal'
 
-    // POS Terminal Complete
-    this.posTerminalPage = page.locator("[id='page-List/POS Terminal/List']")
-    this.posTerminalPageHeading = this.posTerminalPage.locator("h3")
-    this.clearFilterXButton = this.page.locator("[title='Clear all filters']")
-    
-    // Hardware Id
-    this.addPosTerminalButton = this.page.getByRole('button', { name: 'Add POS Terminal' })
-    this.hardwareId = this.page.locator("div[data-fieldname='hardware_id'] div[class*='control-value']")
+        // ── Locators: list view ───────────────────────────────────
+        this.posTerminalPage = page.locator("[id='page-List/POS Terminal/List']")
+        this.posTerminalPageHeading = this.posTerminalPage.locator("h3")
+        this.clearFilterXButton = page.locator("[title='Clear all filters']")
+        this.addPosTerminalButton = page.getByRole('button', { name: 'Add POS Terminal' })
 
-
-    // Release Terminal Button
-    this.saveButton = this.page.getByRole('button', { name: 'Save' })
-    this.releaseTerminalButton = this.page.getByRole('button', {name : /Release Terminal/i})
-
+        // ── Locators: terminal form ───────────────────────────────
+        this.hardwareId = page.locator("div[data-fieldname='hardware_id'] div[class*='control-value']")
+        this.saveButton = page.getByRole('button', { name: 'Save' })
+        this.releaseTerminalButton = page.getByRole('button', {name : /Release Terminal/i})
     }
 
-    // Define a dynamic locator
+    // ── Dynamic locators ──────────────────────────────────────────
+
     posTerminalLink(terminalName) {
         return this.page.locator(`div.result div.list-row-container a[data-name='${terminalName}']`);
     }
@@ -30,51 +35,44 @@ class PosTerminalListPage{
         return this.page.getByRole('link', {name : terminalName})
     }
 
-    async verifyPosTerminalPage(){
-        await expect(this.page).toHaveTitle("POS Terminal")
-        await expect(this.posTerminalPageHeading).toHaveText("POS Terminal")
+    // ── Actions ───────────────────────────────────────────────────
+
+    /** Override (polymorphism): the POS Terminal list is ready. */
+    async verifyPageLoaded(){
+        await expect(this.addPosTerminalButton).toBeVisible()
     }
 
     async clearAllFilters(){
         await this.clearFilterXButton.click()
         await this.page.waitForLoadState('networkidle');
-        console.log("All POS Terminal Filters CLeared")
+        console.log("All POS Terminal filters cleared")
     }
 
+    /** The "Release Terminal" button is only shown while the terminal is bound (it renders after the form). */
     async clickReleaseTerminal(){
-        
-        if(await this.releaseTerminalButton.isVisible()){
-            console.log("Terminal not Released!!")
+        if(await this.wait.isVisibleWithin(this.releaseTerminalButton, 3 * 1000)){
+            console.log("Terminal is bound - releasing it")
             await this.releaseTerminalButton.click()
-            console.log("Clicked Release Terminal Button")
         } else {
-            console.log("Terminal is already Released")
+            console.log("Terminal is already released")
         }
-        
     }
 
     async verifyTerminalReleased(){
         await expect(this.releaseTerminalButton).not.toBeVisible();
-        
     }
 
+    /** Full flow: open the list, find the terminal, release it, verify. Safe to call when already released. */
     async releaseTerminal(terminalName){
-        const loginPage = new LoginPage(this.page);
-        await loginPage.goTo('app/pos-terminal');
-
-        await expect(this.addPosTerminalButton).toBeVisible()
+        await this.open()
 
         await this.clearAllFilters()
-
         await this.posTerminalByName(terminalName).click()
-
         await expect(this.saveButton).toBeVisible()
 
         await this.clickReleaseTerminal()
-
         await this.verifyTerminalReleased()
     }
-
 }
 
 module.exports = {PosTerminalListPage};

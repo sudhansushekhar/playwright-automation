@@ -1,0 +1,37 @@
+{
+    "terminals": ["CI-CD Terminal", "CI-CD-Terminal2"],
+    "openingAmount": {
+        "denomination": "10",
+        "count": "2"
+    },
+    "giftCard": {
+        "itemCode": "GC-Gold-2025",
+        "filterField": "POS Invoice",
+        "filterCondition": "Equals"
+    },
+    "openingEntry": {
+        "company_name": "ACME Retail",
+        "pos_profile_name": "POS-NY",
+        "team_name": "",
+        "opening_amount": 0,
+        "cash_drawer": "Cash Drawer 1",
+        "default_mode_of_payment": "Cash",
+        "denomination_detail": "[{\"code\":1,\"count\":0,\"denomination_value\":0}]"
+    },
+    "itemSale": {
+        "customerCode": "C00016",
+        "customerName": "George Thompson",
+        "itemCode": "AF-001",
+        "itemName": "Spider man Figure",
+        "quantity": 1,
+        "paymentType": "Cash",
+        "payAmount": 9.89,
+        "posProfile": "POS-NY",
+        "company": "ACME Retail",
+        "currency": "USD",
+        "warehouse": "New York Store - AR",
+        "uom": "Each",
+        "taxAccount": "NY State Tax - AR",
+        "taxDescription": "NY State Tax"
+    }
+}

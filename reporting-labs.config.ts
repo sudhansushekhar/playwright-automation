@@ -11,7 +11,7 @@ import type { ReportingLabsOptions } from 'reporting-labs';
 const config: ReportingLabsOptions = {
 
   // ── Look ─────────────────────────────────────────────────────────────────────
-  title: 'My app – regression',                       // shown in the header
+  title: 'iVendNext POS – regression',                // shown in the header
   // logo: 'logo.png',                               // your logo next to the title: a file next to this config (embedded), or an https URL
   // palette: 'lab',                                  // 'lab' (blue, default) | 'ocean' | 'ember' | 'mono'; viewers can switch
   // accent: '#7C3AED',                               // your brand color instead of the palette accent
@@ -20,11 +20,11 @@ const config: ReportingLabsOptions = {
   // embedFonts: true,                                // bundle IBM Plex (~140 KB) so it looks the same offline
 
   // ── Header details ───────────────────────────────────────────────────────────
-  // project: { name: 'ShopLite Web', version: '2.4.0', team: 'QA Platform', url: 'https://shoplite.example.com', description: '' },
+  project: { name: 'iVendNext POS', team: 'QA Automation', description: 'Playwright UI + API regression' },
   metadata: {                                         // chips in the header; `build` also labels the run in the trend
     env: process.env.TEST_ENV ?? 'local',
     // build: process.env.BUILD_NUMBER ?? 'local',     // when missing, the CI run number is used
-    // branch: process.env.GIT_BRANCH ?? 'main',
+    branch: process.env.GITHUB_REF_NAME ?? 'local',    // set by GitHub Actions
   },
   // env: { 'App version': '2.4.0', 'Test data': 'staging-seed-12' },   // extra rows on the Environment card
 
@@ -58,6 +58,7 @@ const config: ReportingLabsOptions = {
   //   issue: 'https://acme.atlassian.net/browse/{id}',
   // },
   // maskKeys: ['otp', 'pan'],                        // extra keys to mask as **** (passwords, tokens, cookies already are)
+  maskValues: [process.env.APP_PASSWORD].filter((v): v is string => !!v),   // never show the login password in the report
   // editorLinks: true,                               // "Open in VS Code" on every test; default: on locally, off in CI
   // bdd: false,                                      // style Given/When/Then steps as Gherkin; default: auto-detect
 

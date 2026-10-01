@@ -1,9 +1,26 @@
-const { expect , request} = require("@playwright/test");
+/**
+ * APIUtils
+ * --------
+ * Wrapper around Playwright's APIRequestContext for the iVendNext (Frappe) backend.
+ * Used to prepare data quickly through the API (login, terminal binding, opening shift,
+ * POS sale) so the browser only has to check the result.
+ *
+ * Session note: the API context logs in on its own (loginWithAPI). Do not reuse the
+ * browser's saved UI session here - it carries a CSRF token that every POST would need.
+ */
+const { expect } = require("@playwright/test");
 const { randomUUID } = require("crypto");
 
 const headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
 
 class APIUtils{
+    /**
+     * @param {string} baseUrl                   e.g. "http://localhost:8080/"
+     * @param {import('@playwright/test').APIRequestContext} apiContext
+     * @param {{usr: string, pwd: string}} loginPayload
+     * @param {{user: string, terminal: string}} getOpeningEntryPayload
+     * @param {object} createOpeningEntryPayload  see testData/posData.json → openingEntry
+     */
     constructor(baseUrl, apiContext, loginPayload, getOpeningEntryPayload, createOpeningEntryPayload){
         this.baseUrl = baseUrl;
         this.apiContext = apiContext;
@@ -13,105 +30,112 @@ class APIUtils{
         this.csrfToken = null;
     }
 
+    // ── Authentication ────────────────────────────────────────────
+
+    /** POST api/method/login. The session cookie stays in apiContext; its storageState is returned. */
     async loginWithAPI(){
         const loginResponse = await this.apiContext.post(this.baseUrl+"api/method/login", {headers : headers, data : this.loginPayload})
-        
         await expect(loginResponse).toBeOK();
-        console.log("Headers:", loginResponse.headers());
+        console.log("API login:", (await loginResponse.json()).message);
 
-        const responseText = await loginResponse.text();
-        console.log("Login response:", responseText);
-
-        // Get cookies maintained by apiContext
-        const cookies = await this.apiContext.storageState();
-        return cookies;
+        return await this.apiContext.storageState();
     }
 
-    async getOpeningEntry(){
-        const getOpeningEntryResponse = await this.apiContext.post(this.baseUrl+"api/method/ivendnext_pos.api.point_of_sale.get_opening_entry", {headers : headers, data : this.getOpeningEntryPayload})
-        await expect(getOpeningEntryResponse).toBeOK();
-    
-        const getOpeningEntryJson = await getOpeningEntryResponse.json();    
-        console.log('Opening Entry:', getOpeningEntryJson.message.active_opening.name);
-
-        return getOpeningEntryJson.message.active_opening.name;
+    /**
+     * End the API session on the server. Always call it when done: the test user may only have
+     * a few sessions at once (User › simultaneous_sessions = 2), and Frappe drops the OLDEST
+     * one when a new login exceeds it - which would be the saved browser session (storageState).
+     */
+    async logoutWithAPI(){
+        await this.apiContext.post(this.baseUrl+"api/method/logout")
     }
 
-    async createOpeningEntry(){
-        
-        const createOpeningEntryResponse = await this.apiContext.post(this.baseUrl+"api/method/ivendnext_pos.api.point_of_sale.create_pos_opening_entry", {headers : headers, data : this.createOpeningEntryPayload})
-        console.log('Create status:', createOpeningEntryResponse.status());
-        console.log('Create response:', await createOpeningEntryResponse.text());
-        await expect(createOpeningEntryResponse).toBeOK();
-
-        const createOpeningEntryJson = await createOpeningEntryResponse.json();
-
-        return createOpeningEntryJson.message.name;
-        
-    }
-
-    async checkExistingOpeningEntry(){
-        let openingEntry = await this.getOpeningEntry()
-        if(openingEntry == null){
-            openingEntry = await this.createOpeningEntry()
-        } else openingEntry;
-
-        return openingEntry
-    }
-
-    async getTerminal(getTerminalEndPoint, terminalName){
-        const getTerminalParams = { doctype: 'POS Terminal', name: terminalName }
-        const terminalDetailsResponse = await this.apiContext.get(getTerminalEndPoint, {params:getTerminalParams})
-        await expect(terminalDetailsResponse).toBeOK()
-
-        const terminalDetailsJson = await terminalDetailsResponse.json()
-        console.log("Terminal Details : ", terminalDetailsJson)
-        const terminal = terminalDetailsJson.docs[0];
-
-        let hardwareId = terminal.hardware_id;
-        console.log(`Terminal Hardware ID: ${hardwareId}`)
-        
-        return hardwareId;
-    }
-
-    async setTerminalToDB( terminalName, hardwareId){
-        if (!hardwareId){
-            
-            // Released → assign new UUID
-            hardwareId = randomUUID()
-            console.log(`Terminal already released. Assigning new Hardware ID: ${hardwareId}`);
-
-            // Select terminal with UUID format using API before opening Terminal Popup
-            const terminalSetupPayload = {
-                "doctype": "POS Terminal",
-                "name": terminalName,
-                "fieldname": "hardware_id",
-                "value": hardwareId
-            };
-
-            // Use browser's authenticated Frappe session
-            const setTerminalResult = await this.apiContext.post(this.baseUrl + "api/method/frappe.client.set_value", {data:terminalSetupPayload});
-            const result = await setTerminalResult.json()
-            console.log("Set Hardware ID response:", result);
-            return hardwareId;
-        }
-    }
-
+    /** CSRF token of a logged-in browser page (Frappe exposes it as frappe.csrf_token). */
     async getCsrfTokenAfterLoggedIn(page){
         this.csrfToken = await page.evaluate(() => frappe.csrf_token);
-        console.log(`CSRF TOKEN : ${this.csrfToken}`)
-
         return this.csrfToken
     }
 
+    // ── POS terminal ──────────────────────────────────────────────
+
+    /** Current hardware_id of the terminal; empty when the terminal is released. */
+    async getTerminal(terminalName){
+        const terminalDetailsResponse = await this.apiContext.get(this.baseUrl+"api/method/frappe.desk.form.load.getdoc", {
+            params: { doctype: 'POS Terminal', name: terminalName }
+        })
+        await expect(terminalDetailsResponse).toBeOK()
+
+        const hardwareId = (await terminalDetailsResponse.json()).docs[0].hardware_id;
+        console.log(`Terminal "${terminalName}" hardware_id: ${hardwareId || '(released)'}`)
+        return hardwareId;
+    }
+
+    /**
+     * Bind a released terminal to a new hardware_id (a UUID that stands in for the device).
+     * Returns the hardware_id the terminal is bound to - new or existing - so the caller
+     * can put it in the browser's localStorage.
+     */
+    async setTerminalToDB(terminalName, hardwareId){
+        if (!hardwareId){
+            hardwareId = randomUUID()
+            console.log(`Binding terminal "${terminalName}" to new hardware_id: ${hardwareId}`);
+
+            const setTerminalResult = await this.apiContext.post(this.baseUrl + "api/method/frappe.client.set_value", {
+                data: { doctype: "POS Terminal", name: terminalName, fieldname: "hardware_id", value: hardwareId }
+            });
+            await expect(setTerminalResult).toBeOK();
+        }
+        return hardwareId;
+    }
+
+    /** getTerminal + setTerminalToDB in one call. */
+    async bindTerminal(terminalName){
+        const hardwareId = await this.getTerminal(terminalName)
+        return await this.setTerminalToDB(terminalName, hardwareId)
+    }
+
+    // ── Opening shift ─────────────────────────────────────────────
+
+    /** Name of the open shift (POS Opening Entry) for the user/terminal, or null. */
+    async getOpeningEntry(){
+        const getOpeningEntryResponse = await this.apiContext.post(this.baseUrl+"api/method/ivendnext_pos.api.point_of_sale.get_opening_entry", {headers : headers, data : this.getOpeningEntryPayload})
+        await expect(getOpeningEntryResponse).toBeOK();
+
+        const getOpeningEntryJson = await getOpeningEntryResponse.json();
+        const openingEntry = getOpeningEntryJson.message.active_opening?.name ?? null;
+        console.log('Open shift:', openingEntry ?? '(none)');
+        return openingEntry;
+    }
+
+    /** Open a new shift and return its name. */
+    async createOpeningEntry(){
+        const createOpeningEntryResponse = await this.apiContext.post(this.baseUrl+"api/method/ivendnext_pos.api.point_of_sale.create_pos_opening_entry", {headers : headers, data : this.createOpeningEntryPayload})
+        await expect(createOpeningEntryResponse).toBeOK();
+
+        const openingEntry = (await createOpeningEntryResponse.json()).message.name;
+        console.log('Created shift:', openingEntry);
+        return openingEntry;
+    }
+
+    /** Reuse the open shift, or create one. */
+    async checkExistingOpeningEntry(){
+        return (await this.getOpeningEntry()) ?? (await this.createOpeningEntry())
+    }
+
+    // ── Sale ──────────────────────────────────────────────────────
+
+    /** Submit a POS invoice. `page` is a logged-in browser page used only to read the CSRF token. */
     async saleItem(page, salePayload){
         const csrfToken = await this.getCsrfTokenAfterLoggedIn(page);
-        const saleResponse = await this.apiContext.post(this.baseUrl+"api/method/ivendnext_pos.api.pos_invoice.submit_pos_invoice", {headers:{"x-frappe-csrf-token" : csrfToken}, data: salePayload})
-        console.log("Sale status:", saleResponse.status());
-        console.log("Sale response:", await saleResponse.text());
-    
+        const saleResponse = await this.apiContext.post(this.baseUrl+"api/method/ivendnext_pos.api.pos_invoice.submit_pos_invoice", {
+            headers: {"x-frappe-csrf-token" : csrfToken},
+            data: salePayload
+        })
         await expect(saleResponse).toBeOK();
-        return saleResponse.json()
+
+        const saleResponseJson = await saleResponse.json()
+        console.log(`POS invoice created: ${saleResponseJson.message.name}`)
+        return saleResponseJson
     }
 }
 
